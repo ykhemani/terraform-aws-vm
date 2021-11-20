@@ -4,6 +4,26 @@ variable "region" {
   default     = "us-east-1"
 }
 
+variable "org" {
+  type        = string
+  description = "Terraform Cloud/Enterprise Organization Name"
+}
+
+variable "prefix" {
+  type        = string
+  description = "Naming prefix"
+}
+
+variable "foundation_workspace" {
+  type        = string
+  description = "Name of workspace from which to get information on VPC in which to provision resources."
+}
+
+variable "sg_workspace" {
+  type        = string
+  description = "Name of workspace from which to get foundational security groups to use."
+}
+
 variable "ami_filter" {
   type        = string
   description = "AMI filter - e.g. ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"

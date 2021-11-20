@@ -1,13 +1,44 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+  required_version = ">= 0.13"
+}
+
+locals {
+  tags = merge(
+    var.global_tags,
+    var.local_tags
+  )
+}
+
 provider "aws" {
   region = var.region
+  default_tags {
+    tags = local.tags
+  }
 }
 
 data "terraform_remote_state" "foundation" {
   backend = "remote"
+
   config = {
-    organization = "khemani"
+    organization = var.org
     workspaces = {
-      name = "demo-terraform-aws-foundation"
+      name = var.foundation_workspace
+    }
+  }
+}
+
+data "terraform_remote_state" "sg" {
+  backend = "remote"
+
+  config = {
+    organization = var.org
+    workspaces = {
+      name = var.sg_workspace
     }
   }
 }
@@ -38,7 +69,7 @@ resource "aws_instance" "instance" {
   subnet_id                   = element(data.terraform_remote_state.foundation.outputs.public_subnets, count.index)
   ami                         = var.ami_id
   instance_type               = var.instance_type
-  vpc_security_group_ids      = [aws_security_group.sg_ingress.id, aws_security_group.sg_egress.id]
+  vpc_security_group_ids      = [data.terraform_remote_state.sg.outputs.ingress_security_group_id, data.terraform_remote_state.sg.outputs.egress_security_group_id]
   key_name                    = var.ssh_key_name
   associate_public_ip_address = true
   root_block_device {
@@ -49,21 +80,6 @@ resource "aws_instance" "instance" {
   #user_data                   = data.template_file.user_data.rendered
 
   tags = {
-    owner      = var.owner
-    ttl        = var.ttl
-    Name       = "${var.owner}-demo"
-    Image_Name = local.ami_id
-
-    se-region          = var.se-region
-    purpose            = var.purpose
-    terraform          = "true"
-    hc-internet-facing = var.hc-internet-facing
-    creator            = var.creator
-    customer           = var.customer
-    tfe-workspace      = var.tfe-workspace
-    lifecycle-action   = var.lifecycle-action
-    config-as-code     = var.config-as-code
-    repo               = var.repo
-
+    Name = "${var.prefix}-demo"
   }
 }
