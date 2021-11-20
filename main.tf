@@ -67,7 +67,7 @@ locals {
 resource "aws_instance" "instance" {
   count                       = var.instance_count
   subnet_id                   = element(data.terraform_remote_state.foundation.outputs.public_subnets, count.index)
-  ami                         = var.ami_id
+  ami                         = local.ami_id
   instance_type               = var.instance_type
   vpc_security_group_ids      = [data.terraform_remote_state.sg.outputs.ingress_security_group_id, data.terraform_remote_state.sg.outputs.egress_security_group_id]
   key_name                    = var.ssh_key_name
