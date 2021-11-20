@@ -43,7 +43,7 @@ data "terraform_remote_state" "sg" {
   }
 }
 
-data "aws_ami" "ubuntu" {
+data "aws_ami" "ami" {
   most_recent = true
 
   filter {
@@ -60,8 +60,24 @@ data "aws_ami" "ubuntu" {
   owners = [var.ami_owner]
 }
 
+data "hcp_packer_iteration" "iteration" {
+  bucket_name = var.hcp_packer_image_bucket_name
+  channel     = var.hcp_packer_image_channel
+}
+
+data "hcp_packer_image" "image" {
+  bucket_name    = var.hcp_packer_image_bucket_name
+  cloud_provider = "aws"
+  iteration_id   = data.hcp_packer_iteration.iteration.ulid
+  region         = var.region
+}
+
 locals {
-  ami_id = var.ami_id == "" ? data.aws_ami.ubuntu.id : var.ami_id
+  # ami_id precedence:
+  # 1. var.ami_id
+  # 2. packer image
+  # 3. aws_ami
+  ami_id = var.ami_id != "" ? var.ami_id : (data.hcp_packer_image.image.cloud_image_id != "" ? data.hcp_packer_image.image.cloud_image_id : data.aws_ami.ami.id)
 }
 
 resource "aws_instance" "instance" {

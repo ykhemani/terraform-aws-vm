@@ -42,6 +42,18 @@ variable "ami_id" {
   default     = ""
 }
 
+variable "hcp_packer_image_bucket_name" {
+  type        = string
+  description = "The slug of the HCP Packer Registry image bucket to pull from."
+  default     = ""
+}
+
+variable "hcp_packer_image_channel" {
+  type        = string
+  description = "The channel that points to the version of the image you want."
+  default     = ""
+}
+
 variable "instance_count" {
   type        = number
   description = "Number of instances to provision."
