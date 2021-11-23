@@ -79,23 +79,3 @@ locals {
   # 3. aws_ami
   ami_id = var.ami_id != "" ? var.ami_id : (data.hcp_packer_image.image.cloud_image_id != "" ? data.hcp_packer_image.image.cloud_image_id : data.aws_ami.ami.id)
 }
-
-resource "aws_instance" "instance" {
-  count                       = var.instance_count
-  subnet_id                   = element(data.terraform_remote_state.foundation.outputs.public_subnets, count.index)
-  ami                         = local.ami_id
-  instance_type               = var.instance_type
-  vpc_security_group_ids      = [data.terraform_remote_state.sg.outputs.ingress_security_group_id, data.terraform_remote_state.sg.outputs.egress_security_group_id]
-  key_name                    = var.ssh_key_name
-  associate_public_ip_address = true
-  root_block_device {
-    volume_type = var.root_volume_type
-    volume_size = var.root_volume_size
-  }
-
-  #user_data                   = data.template_file.user_data.rendered
-
-  tags = {
-    Name = "${var.prefix}-demo"
-  }
-}
