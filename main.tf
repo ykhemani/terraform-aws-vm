@@ -80,12 +80,46 @@ locals {
   ami_id = var.ami_id != "" ? var.ami_id : (data.hcp_packer_image.image.cloud_image_id != "" ? data.hcp_packer_image.image.cloud_image_id : data.aws_ami.ami.id)
 }
 
+resource "aws_security_group" "sg_web" {
+  name        = "web_ingress_sg"
+  description = "${var.prefix} Web Ingress Security Group"
+  vpc_id      = data.terraform_remote_state.foundation.outputs.vpc_id
+
+  # http
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # https
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "web_ingress_sg"
+  }
+}
+
 resource "aws_instance" "instance" {
-  count                       = var.instance_count
-  subnet_id                   = element(data.terraform_remote_state.foundation.outputs.public_subnets, count.index)
-  ami                         = local.ami_id
-  instance_type               = var.instance_type
-  vpc_security_group_ids      = [data.terraform_remote_state.sg.outputs.ingress_security_group_id, data.terraform_remote_state.sg.outputs.egress_security_group_id]
+  count                = var.instance_count
+  subnet_id            = element(data.terraform_remote_state.foundation.outputs.public_subnets, count.index)
+  ami                  = local.ami_id
+  instance_type        = var.instance_type
+  iam_instance_profile = var.iam_instance_profile
+  vpc_security_group_ids = concat(
+    [
+      data.terraform_remote_state.sg.outputs.ingress_security_group_id,
+      data.terraform_remote_state.sg.outputs.egress_security_group_id
+    ],
+    [aws_security_group.sg_web.id],
+    var.instance_security_group_ids
+  )
   key_name                    = var.ssh_key_name
   associate_public_ip_address = true
   root_block_device {

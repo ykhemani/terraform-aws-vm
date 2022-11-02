@@ -83,8 +83,14 @@ variable "ssh_key_name" {
   description = "Name of SSH key in AWS region."
 }
 
-variable "owner_cidr_blocks" {
+variable "instance_security_group_ids" {
   type        = list(string)
-  description = "CIDR blocks that will be allowed to access our instance."
-  default     = ["0.0.0.0/0"]
+  description = "List of additional security group ID's to apply to the instance."
+  default     = []
+}
+
+variable "iam_instance_profile" {
+  type        = string
+  description = "IAM instance profile."
+  default     = null
 }
